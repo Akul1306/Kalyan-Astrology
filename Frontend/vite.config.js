@@ -13,6 +13,9 @@ export default defineConfig({
     'process.env': {},
   },
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
     proxy: {
       '/api': {
         target: 'https://kalyanb.vercel.app',
