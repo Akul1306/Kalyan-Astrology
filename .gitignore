@@ -1,0 +1,86 @@
+# Ignore everything by default
+*
+
+# Allow Backend folder
+!Backend/
+!Backend/**
+
+# Allow Frontend folder
+!Frontend/
+!Frontend/**
+
+# Allow gitignore itself
+!.gitignore
+
+# =========================
+# Backend ignores
+# =========================
+
+# dependencies
+Backend/node_modules/
+
+# environment files
+Backend/.env
+Backend/.env.*
+Frontend/.env
+Frontend/.env.*
+
+# logs
+Backend/npm-debug.log*
+Backend/yarn-debug.log*
+Backend/yarn-error.log*
+Backend/pnpm-debug.log*
+
+# uploads / temp files
+Backend/uploads/
+
+# build files
+Backend/dist/
+Backend/build/
+
+# cache
+Backend/.cache/
+
+# coverage
+Backend/coverage/
+
+# =========================
+# Frontend ignores
+# =========================
+
+# dependencies
+Frontend/node_modules/
+
+# build output
+Frontend/dist/
+Frontend/build/
+
+# cache
+Frontend/.cache/
+Frontend/.parcel-cache/
+
+# coverage
+Frontend/coverage/
+
+# vite
+Frontend/vite.svg
+
+# logs
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+Frontend/pnpm-debug.log*
+
+# =========================
+# OS / Editor files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea/
+
+# temp files
+*.tmp
+*.temp

@@ -1,0 +1,14 @@
+# *
+User-agent: *
+Allow: /
+
+# *
+User-agent: *
+Disallow: /api/
+Disallow: /_next/
+
+# Host
+Host: https://www.kalyan.example
+
+# Sitemaps
+Sitemap: https://www.kalyan.example/sitemap.xml
