@@ -21,7 +21,7 @@ app.use(
       if (
         origin.startsWith("http://localhost:") ||
         origin.endsWith(".vercel.app") ||
-        origin === "https://a-mu-lime.vercel.app"
+        origin === "https://kalyan-azure.vercel.app"
       ) {
         return callback(null, true);
       }
