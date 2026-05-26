@@ -7,6 +7,183 @@ import { useKundliStore } from "@/lib/store";
 import { kundliAPI } from "@/lib/api";
 import Link from "next/link";
 
+function FormattedMessage({ text }) {
+    if (!text) return null;
+    const lines = text.split("\n");
+    let tableHeaders = [];
+    
+    const parseBold = (content) => {
+        const parts = content.split(/\*\*([^*]+)\*\*/g);
+        return parts.map((part, i) => {
+            if (i % 2 === 1) {
+                return <strong key={i} className="font-extrabold text-amber-700 dark:text-amber-400">{part}</strong>;
+            }
+            return part;
+        });
+    };
+
+    return (
+        <div className="space-y-1.5 font-mono text-[11px] sm:text-[12px] leading-relaxed">
+            {lines.map((line, idx) => {
+                let trimmed = line.trim();
+                if (!trimmed) {
+                    tableHeaders = [];
+                    return <div key={idx} className="h-1.5" />;
+                }
+
+                // Markdown Table Divider
+                if (trimmed.startsWith("|") && trimmed.includes("-")) {
+                    const clean = trimmed.replace(/[|:\-\s]/g, "");
+                    if (clean.length === 0) {
+                        return <hr key={idx} className="my-2 border-amber-100/50" />;
+                    }
+                }
+
+                // Markdown Table Row
+                if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+                    const cells = trimmed.split("|").map(c => c.trim()).slice(1, -1);
+                    if (cells.length > 0) {
+                        const colCount = cells.length;
+                        const isHeader = trimmed.toLowerCase().includes("planet") || 
+                                         trimmed.toLowerCase().includes("indicator") || 
+                                         trimmed.toLowerCase().includes("issue") ||
+                                         trimmed.toLowerCase().includes("antardasha") ||
+                                         trimmed.toLowerCase().includes("transit") ||
+                                         trimmed.toLowerCase().includes("theme");
+
+                        if (isHeader) {
+                            tableHeaders = cells;
+                            if (colCount >= 5) {
+                                return null;
+                            }
+
+                            const gridColsClass = 
+                                colCount === 1 ? "grid-cols-1" :
+                                colCount === 2 ? "grid-cols-2" :
+                                colCount === 3 ? "grid-cols-3" :
+                                colCount === 4 ? "grid-cols-4" : "grid-cols-6";
+
+                            return (
+                                <div key={idx} className={`grid ${gridColsClass} gap-2 py-2 px-3 bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-bold uppercase tracking-wider rounded-t-xl mt-3 shadow-xs`}>
+                                    {cells.map((cell, cidx) => (
+                                        <div key={cidx} className="truncate">{cell}</div>
+                                    ))}
+                                </div>
+                            );
+                        }
+
+                        // Wide Table Pivot (5+ columns)
+                        if (colCount >= 5) {
+                            const planetName = cells[0].replace(/\*\*/g, "");
+                            return (
+                                <div key={idx} className="border border-amber-100/85 bg-amber-50/5 rounded-2xl p-4 my-2.5 shadow-xs border-t-2 border-t-amber-500 font-mono">
+                                    <div className="flex justify-between items-center border-b border-amber-100 pb-1.5 mb-2.5">
+                                        <h4 className="text-[11px] font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wide">
+                                            <span>🪐</span> {planetName} Details
+                                        </h4>
+                                        <span className="text-[8px] uppercase font-bold tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                                            Vedic
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {cells.slice(1).map((cell, cidx) => {
+                                            const headerLabel = tableHeaders[cidx + 1] || `Detail #${cidx + 1}`;
+                                            const isLong = cell.length > 40;
+                                            if (isLong) {
+                                                return (
+                                                    <div key={cidx} className="flex flex-col pt-1.5 border-t border-amber-50/40">
+                                                        <span className="text-[8px] uppercase font-bold tracking-wider text-amber-600 mb-1">
+                                                            {headerLabel}
+                                                        </span>
+                                                        <span className="text-[11px] text-gray-700 leading-relaxed">
+                                                            {parseBold(cell)}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div key={cidx} className="flex items-center justify-between py-1 border-b border-amber-50/30 text-[11px]">
+                                                    <span className="font-bold text-amber-700 uppercase tracking-wider text-[8px]">{headerLabel}</span>
+                                                    <span className="text-gray-800 font-semibold">{parseBold(cell)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // Normal Table Row
+                        const gridColsClass = 
+                            colCount === 1 ? "grid-cols-1" :
+                            colCount === 2 ? "grid-cols-2" :
+                            colCount === 3 ? "grid-cols-3" :
+                            colCount === 4 ? "grid-cols-4" : "grid-cols-6";
+
+                        return (
+                            <div key={idx} className={`grid ${gridColsClass} gap-2 py-2 px-3 border-b border-amber-50 bg-amber-50/10 text-[11px] leading-relaxed transition-all hover:bg-amber-100/10`}>
+                                {cells.map((cell, cidx) => (
+                                    <div key={cidx} className={cidx === 0 ? "font-bold text-gray-900" : "text-gray-600"}>
+                                        {parseBold(cell)}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    }
+                }
+
+                // Headings
+                if (trimmed.startsWith("###")) {
+                    return <h4 key={idx} className="text-xs font-bold text-amber-900 mt-3.5 mb-1 uppercase tracking-wider">{trimmed.replace(/^###\s*/, "")}</h4>;
+                }
+                if (trimmed.startsWith("##")) {
+                    return <h3 key={idx} className="text-xs sm:text-sm font-bold text-amber-950 mt-4.5 mb-1.5 border-b border-amber-100 pb-1 uppercase tracking-wide">{trimmed.replace(/^##\s*/, "")}</h3>;
+                }
+                if (trimmed.startsWith("#")) {
+                    return <h2 key={idx} className="text-sm sm:text-base font-bold text-gray-900 mt-4.5 mb-1.5">{trimmed.replace(/^#\s*/, "")}</h2>;
+                }
+
+                // Blockquotes
+                if (trimmed.startsWith(">")) {
+                    return (
+                        <div key={idx} className="pl-3 border-l-2 border-amber-400 bg-amber-50/30 p-2 rounded-r-xl my-2 text-amber-800 text-[11px]">
+                            {parseBold(trimmed.replace(/^>\s*/, ""))}
+                        </div>
+                    );
+                }
+
+                // Lists
+                if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                    const content = trimmed.replace(/^[-*]\s*/, "");
+                    const metaRegex = /^\*\*([^*]+):\*\*\s*([\s\S]*)/;
+                    const metaMatch = content.match(metaRegex);
+                    if (metaMatch) {
+                        const key = metaMatch[1].trim();
+                        const value = metaMatch[2].trim();
+                        return (
+                            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between py-1.5 px-3 border border-amber-100/40 bg-amber-50/5 rounded-xl mb-1.5 text-[11px] transition-all hover:bg-amber-50/15">
+                                <span className="font-bold text-amber-700 uppercase tracking-wider text-[8px]">{key}</span>
+                                <span className="text-gray-800 mt-0.5 sm:mt-0 font-semibold">{parseBold(value)}</span>
+                            </div>
+                        );
+                    }
+                    return (
+                        <li key={idx} className="ml-3 list-disc text-[11px] text-gray-700 leading-relaxed mb-1">
+                            {parseBold(content)}
+                        </li>
+                    );
+                }
+
+                return (
+                    <p key={idx} className="text-[11px] text-gray-700 leading-relaxed mb-1.5">
+                        {parseBold(trimmed)}
+                    </p>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function AIChatBot({ onSend }) {
     const { currentUser } = useKundliStore();
     const [messages, setMessages] = useState([]);
@@ -156,7 +333,7 @@ export default function AIChatBot({ onSend }) {
                                     : "mr-auto bg-gray-100 text-gray-800 rounded-bl-sm shadow-[0_1px_2px_rgba(245,245,245,0.5)]"
                             }`}
                         >
-                            {msg.text}
+                            {msg.role === "ai" ? <FormattedMessage text={msg.text} /> : msg.text}
                         </motion.div>
                     ))}
                     {isThinking && (
