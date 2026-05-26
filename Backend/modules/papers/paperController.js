@@ -140,3 +140,53 @@ export const deletePaper = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Update a paper (Admin only)
+// @route   PATCH /api/papers/:id
+export const updatePaper = async (req, res, next) => {
+  try {
+    const paper = await Paper.findById(req.params.id);
+
+    if (!paper) {
+      return res.status(404).json({
+        status: "fail",
+        message: "No paper found with that ID",
+      });
+    }
+
+    const { tags } = req.body;
+    const updateData = { ...req.body };
+
+    // If there's a new file uploaded, upload to Cloudinary and update fileUrl
+    const localFilePath = req.file?.path;
+    if (localFilePath) {
+      const cloudinaryResponse = await uploadOnCloudinary(localFilePath);
+      if (!cloudinaryResponse) {
+        return res.status(500).json({
+          status: "error",
+          message: "Failed to upload file to Cloudinary.",
+        });
+      }
+      updateData.fileUrl = cloudinaryResponse.url;
+    }
+
+    // Parse tags if provided
+    if (tags) {
+      updateData.tags = Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim());
+    }
+
+    const updatedPaper = await Paper.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        paper: updatedPaper,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

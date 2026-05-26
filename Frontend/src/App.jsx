@@ -14,6 +14,7 @@ import ResearchPage from './pages/research/page';
 import BlogsPage from './pages/research/blogs/page';
 import BlogPage from './pages/research/blogs/BlogPage/page';
 import ResearchPapersPage from './pages/research/research-papers/page';
+import PaperPage from './pages/research/research-papers/Paper/page';
 import AiBlogs from './pages/research/aiblogs/page';
 import EducationPage from './pages/education/page';
 import EducationBooksPage from './pages/education/Books/page';
@@ -67,6 +68,7 @@ function App() {
           <Route path="/research/blogs/BlogPage" element={<BlogPage />} />
           <Route path="/research/blogs/:id" element={<BlogPage />} />
           <Route path="/research/research-papers" element={<ResearchPapersPage />} />
+          <Route path="/research/research-papers/Paper" element={<PaperPage />} />
           <Route path="/research/aiblogs" element={<AiBlogs />} />
 
           <Route path="/education" element={<EducationPage />} />

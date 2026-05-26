@@ -18,6 +18,7 @@ export default function ResearchPapersPage() {
     const [loading, setLoading] = useState(true);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [uploadLoading, setUploadLoading] = useState(false);
+    const [editingPaper, setEditingPaper] = useState(null);
 
     // Form inputs state
     const [title, setTitle] = useState("");
@@ -59,6 +60,19 @@ export default function ResearchPapersPage() {
         fetchPapers();
     }, []);
 
+    useEffect(() => {
+        if (!isDrawerOpen) {
+            setEditingPaper(null);
+            setTitle("");
+            setAuthor("");
+            setDate("");
+            setCategory("Research");
+            setTags("");
+            setDescription("");
+            setSelectedFile(null);
+        }
+    }, [isDrawerOpen]);
+
     const handleSearchChange = (query) => {
         setSearchQuery(query);
         if (query) {
@@ -68,6 +82,18 @@ export default function ResearchPapersPage() {
 
     const handleTopicSelect = (topic) => {
         setSelectedTopic(topic);
+    };
+
+    const handleEdit = (paper) => {
+        setEditingPaper(paper);
+        setTitle(paper.title || "");
+        setAuthor(paper.author || "");
+        setDate(paper.date || "");
+        setCategory(paper.category || "Research");
+        setTags(paper.tags?.join(", ") || "");
+        setDescription(paper.description || "");
+        setSelectedFile(null);
+        setIsDrawerOpen(true);
     };
 
     const handleFileChange = (e) => {
@@ -85,7 +111,7 @@ export default function ResearchPapersPage() {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title.trim() || !author.trim() || !description.trim() || !selectedFile) {
+        if (!title.trim() || !author.trim() || !description.trim() || (!editingPaper && !selectedFile)) {
             showToast("Please fill in all required fields and select a PDF file.", "error");
             return;
         }
@@ -95,15 +121,26 @@ export default function ResearchPapersPage() {
         const formData = new FormData();
         formData.append("title", title.trim());
         formData.append("author", author.trim());
-        formData.append("date", date.trim() || undefined);
+        if (date.trim()) {
+            formData.append("date", date.trim());
+        }
         formData.append("category", category);
         formData.append("tags", tags.trim());
         formData.append("description", description.trim());
-        formData.append("file", selectedFile);
+        if (selectedFile) {
+            formData.append("file", selectedFile);
+        }
 
         try {
-            const response = await fetch("/api/papers", {
-                method: "POST",
+            let url = "/api/papers";
+            let method = "POST";
+            if (editingPaper) {
+                url = `/api/papers/${editingPaper._id}`;
+                method = "PATCH";
+            }
+
+            const response = await fetch(url, {
+                method,
                 headers: {
                     "Authorization": `Bearer ${token}`
                 },
@@ -113,10 +150,10 @@ export default function ResearchPapersPage() {
             const data = await response.json();
 
             if (!response.ok || data.status === "fail") {
-                throw new Error(data.message || "Failed to upload paper");
+                throw new Error(data.message || "Failed to save paper");
             }
 
-            showToast("Research paper uploaded successfully! 📚✨");
+            showToast(editingPaper ? "Research paper updated successfully! 📚✨" : "Research paper uploaded successfully! 📚✨");
             setIsDrawerOpen(false);
             
             // Reset form fields
@@ -127,11 +164,12 @@ export default function ResearchPapersPage() {
             setTags("");
             setDescription("");
             setSelectedFile(null);
+            setEditingPaper(null);
             
             // Refresh papers grid
             fetchPapers();
         } catch (error) {
-            showToast(error.message || "Error uploading paper. Try again.", "error");
+            showToast(error.message || "Error saving paper. Try again.", "error");
         } finally {
             setUploadLoading(false);
         }
@@ -235,6 +273,7 @@ export default function ResearchPapersPage() {
                     papers={papers}
                     onDeleteSuccess={fetchPapers}
                     showToast={showToast}
+                    onEdit={handleEdit}
                 />
             )}
 
@@ -263,10 +302,10 @@ export default function ResearchPapersPage() {
                             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50/10">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900 font-poppins flex items-center gap-2">
-                                        <BookOpen className="h-5 w-5 text-blue-600" /> Upload Research Paper
+                                        <BookOpen className="h-5 w-5 text-blue-600" /> {editingPaper ? "Edit Research Paper" : "Upload Research Paper"}
                                     </h3>
                                     <p className="text-xs text-gray-500 mt-0.5 font-poppins">
-                                        Publish verified astrological research, journals, and Vastu papers.
+                                        {editingPaper ? "Update verified astrological research, journals, and Vastu papers." : "Publish verified astrological research, journals, and Vastu papers."}
                                     </p>
                                 </div>
                                 <button
@@ -371,14 +410,14 @@ export default function ResearchPapersPage() {
                                 {/* File Attachment (PDF Only) */}
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                        Attach PDF File <span className="text-rose-500">*</span>
+                                        Attach PDF File {!editingPaper && <span className="text-rose-500">*</span>}
                                     </label>
                                     
                                     <div className="relative group border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-blue-500 hover:bg-blue-50/10 transition-all duration-200 flex flex-col items-center justify-center cursor-pointer text-center">
                                         <input
                                             type="file"
                                             accept=".pdf"
-                                            required
+                                            required={!editingPaper}
                                             onChange={handleFileChange}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
@@ -397,10 +436,10 @@ export default function ResearchPapersPage() {
                                         ) : (
                                             <div>
                                                 <p className="text-sm font-semibold text-gray-700 leading-snug">
-                                                    Select research PDF file
+                                                    {editingPaper ? "Keep existing PDF or upload new one" : "Select research PDF file"}
                                                 </p>
                                                 <p className="text-[10px] text-gray-400 mt-1 font-semibold">
-                                                    PDF only, max size 10MB
+                                                    {editingPaper ? "Upload a new PDF to replace current one" : "PDF only, max size 10MB"}
                                                 </p>
                                             </div>
                                         )}
@@ -418,16 +457,16 @@ export default function ResearchPapersPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={uploadLoading || !title.trim() || !author.trim() || !description.trim() || !selectedFile}
+                                        disabled={uploadLoading || !title.trim() || !author.trim() || !description.trim() || (!editingPaper && !selectedFile)}
                                         className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer text-center flex items-center justify-center gap-1.5"
                                     >
                                         {uploadLoading ? (
                                             <>
                                                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                                                Uploading...
+                                                Saving...
                                             </>
                                         ) : (
-                                            "Upload Paper"
+                                            editingPaper ? "Save Changes" : "Upload Paper"
                                         )}
                                     </button>
                                 </div>

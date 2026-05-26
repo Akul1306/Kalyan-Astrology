@@ -100,7 +100,7 @@ export const papers = [
         topic: "Stree Shrap",
     },
 ];
-export const ResearchPaperGrid = ({ searchQuery = "", selectedTopic, papers: passedPapers, onDeleteSuccess, showToast }) => {
+export const ResearchPaperGrid = ({ searchQuery = "", selectedTopic, papers: passedPapers, onDeleteSuccess, showToast, onEdit }) => {
     const activePapers = passedPapers && passedPapers.length > 0 ? passedPapers : papers;
     
     // Filter papers based on search query and selected topic
@@ -164,7 +164,7 @@ export const ResearchPaperGrid = ({ searchQuery = "", selectedTopic, papers: pas
         <motion.div layout className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filteredPapers.map((paper, idx) => (<motion.div key={`${paper.title || paper._id}-${idx}`} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: idx * 0.05 }}>
-                <ResearchPaperCard {...paper} onDeleteSuccess={onDeleteSuccess} showToast={showToast}/>
+                <ResearchPaperCard {...paper} onDeleteSuccess={onDeleteSuccess} showToast={showToast} onEdit={onEdit}/>
               </motion.div>))}
           </AnimatePresence>
         </motion.div>)}

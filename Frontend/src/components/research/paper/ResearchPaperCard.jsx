@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useKundliStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 
-export const ResearchPaperCard = ({ _id, title, author, date, description, link = "#", fileUrl, createdAt, onDeleteSuccess, showToast }) => {
+export const ResearchPaperCard = ({ _id, title, author, date, description, link = "#", fileUrl, createdAt, onDeleteSuccess, showToast, onEdit, tags = [] }) => {
     const { currentUser, token, isAuthenticated } = useKundliStore();
     const navigate = useNavigate();
     const pdfUrl = fileUrl || link;
@@ -27,7 +27,15 @@ export const ResearchPaperCard = ({ _id, title, author, date, description, link 
             return;
         }
         if (pdfUrl && pdfUrl !== "#") {
-            window.open(pdfUrl, "_blank", "noopener,noreferrer");
+            navigate("/research/research-papers/Paper", {
+                state: {
+                    pdfUrl,
+                    title,
+                    author,
+                    date: displayDate,
+                    description
+                }
+            });
         }
     };
 
@@ -95,17 +103,25 @@ export const ResearchPaperCard = ({ _id, title, author, date, description, link 
 
       {/* Action Buttons */}
       <div className="mt-6 flex items-center justify-between gap-3">
-        <Button asChild onClick={(e) => {
+        <Button onClick={(e) => {
             e.stopPropagation();
-            if (!isAuthenticated) {
-                e.preventDefault();
-                navigate("/login", { state: { from: { pathname: "/research/research-papers" } } });
-            }
+            handleCardClick(e);
         }} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium px-5 py-2 rounded-xl shadow-md transition-all duration-200 cursor-pointer flex-1 text-center">
-          <a href={isAuthenticated ? pdfUrl : "#"} target={isAuthenticated ? "_blank" : "_self"} rel="noopener noreferrer">
-            Read Paper →
-          </a>
+          Read Paper →
         </Button>
+
+        {isAdmin && _id && onEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit({ _id, title, author, date: displayDate, description, fileUrl, tags });
+            }}
+            className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 rounded-xl transition-all duration-200 border border-amber-200 cursor-pointer shrink-0"
+            title="Edit Paper"
+          >
+            ✍️
+          </button>
+        )}
 
         {isAdmin && _id && (
           <button

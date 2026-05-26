@@ -6,6 +6,7 @@ import {
   getSavedPapers,
   toggleSavePaper,
   deletePaper,
+  updatePaper,
 } from "./paperController.js";
 import { protect, restrictTo } from "../../middleware/authMiddleware.js";
 
@@ -22,6 +23,7 @@ router.post("/:id/save", toggleSavePaper);
 
 // Admin only routes
 router.post("/", restrictTo("admin"), upload.single("file"), createPaper);
+router.patch("/:id", restrictTo("admin"), upload.single("file"), updatePaper);
 router.delete("/:id", restrictTo("admin"), deletePaper);
 
 export default router;
