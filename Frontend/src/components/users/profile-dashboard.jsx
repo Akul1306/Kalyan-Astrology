@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Edit3, Star, Zap, Award, CheckCircle2, XCircle, ArrowRight, X } from "lucide-react";
+import { Calendar, Edit3, Star, Zap, Award, CheckCircle2, XCircle, ArrowRight, X, Loader2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
 import { StatCard } from "@/components/cards/stat-card";
@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 
-export function ProfileDashboard({ user, stats, history, testHistory = [], loadingHistory = false }) {
+export function ProfileDashboard({ user, stats, history, testHistory = [], loadingHistory = false, onSaveProfile }) {
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [selectedResult, setSelectedResult] = useState(null); // For Review Answers Modal
     const [formState, setFormState] = useState({
         name: user.name,
@@ -51,8 +52,17 @@ export function ProfileDashboard({ user, stats, history, testHistory = [], loadi
         },
     ], []);
 
-    const handleSave = () => {
-        setIsEditing(false);
+    const handleSave = async () => {
+        setIsSaving(true);
+        if (onSaveProfile) {
+            const success = await onSaveProfile(formState);
+            if (success) {
+                setIsEditing(false);
+            }
+        } else {
+            setIsEditing(false);
+        }
+        setIsSaving(false);
     };
 
     return (<>
@@ -233,8 +243,9 @@ export function ProfileDashboard({ user, stats, history, testHistory = [], loadi
                 <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-full">
                   Cancel
                 </Button>
-                <Button onClick={handleSave} className="rounded-full bg-gray-900 text-white">
-                  Save
+                <Button onClick={handleSave} disabled={isSaving} className="rounded-full bg-gray-900 text-white flex items-center gap-2 cursor-pointer">
+                  {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  <span>Save</span>
                 </Button>
               </div>
             </motion.div>

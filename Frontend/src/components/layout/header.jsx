@@ -169,29 +169,9 @@ export function Header() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
-                    <Link href="/KundliCloud" className="flex items-center gap-2">
-                      <Orbit className="h-4 w-4"/>
-                      Kundlis
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
                     <Link href="/Cart" className="flex items-center gap-2">
                       <ShoppingCart className="h-4 w-4"/>
                       Cart
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/SavedPaper" className="flex items-center gap-2">
-                      <BookMarked className="h-4 w-4"/>
-                      Saved Papers
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link href="/EducationTest" className="flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4"/>
-                      Tests
                     </Link>
                   </DropdownMenuItem>
 

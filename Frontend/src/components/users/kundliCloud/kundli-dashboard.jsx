@@ -1,10 +1,12 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import AstroProfileCard from "../../cards/AstroProfileCard";
 import EditKundli from "./EditKundli";
+import { useKundliStore } from "@/lib/store";
+
 const initialData = [
     {
         id: "k1",
@@ -46,27 +48,125 @@ const initialData = [
         tags: ["research"],
     },
 ];
+
 export function KundliDashboard() {
+    const { token, isAuthenticated } = useKundliStore();
     const [data, setData] = useState(initialData);
+    const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [selectedTag, setSelectedTag] = useState(null);
     const [sortBy, setSortBy] = useState("date");
     const [editing, setEditing] = useState(null);
+
+    // Fetch live Kundlis if authenticated
+    useEffect(() => {
+        const fetchKundlis = async () => {
+            if (!isAuthenticated || !token) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const res = await fetch("/api/kundli", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.status === "success" && json.data?.kundlis) {
+                        const mapped = json.data.kundlis.map((k) => {
+                            const moonInfo = k.chartData?.planetaryPositions?.find(p => p.planet === "Moon");
+                            return {
+                                id: k._id,
+                                name: k.personalInfo?.name || k.title,
+                                dob: k.personalInfo?.dateOfBirth ? new Date(k.personalInfo.dateOfBirth).toISOString().split('T')[0] : "",
+                                tob: k.personalInfo?.timeOfBirth || "",
+                                place: k.personalInfo?.placeOfBirth || "",
+                                gender: k.personalInfo?.gender || "Male",
+                                rashi: moonInfo?.sign || k.chartData?.rashi || "Pisces",
+                                nakshatra: k.chartData?.nakshatra || "Revati",
+                                lagna: k.chartData?.lagna || "Leo",
+                                createdAt: k.createdAt,
+                                tags: k.tags || [],
+                            };
+                        });
+                        setData(mapped);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch saved Kundlis:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchKundlis();
+    }, [token, isAuthenticated]);
+
+    async function onSave(updated) {
+        if (isAuthenticated && token) {
+            try {
+                const res = await fetch(`/api/kundli/${updated.id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: updated.name,
+                        dob: updated.dob,
+                        tob: updated.tob,
+                        place: updated.place,
+                        gender: updated.gender,
+                        rashi: updated.rashi,
+                        nakshatra: updated.nakshatra,
+                        lagna: updated.lagna,
+                        tags: typeof updated.tags === "string" ? updated.tags.split(",").map((s) => s.trim()) : updated.tags,
+                    })
+                });
+                
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.status === "success" && json.data?.kundli) {
+                        const savedK = json.data.kundli;
+                        const moonInfo = savedK.chartData?.planetaryPositions?.find(p => p.planet === "Moon");
+                        
+                        setData((prev) => prev.map((d) => d.id === savedK._id
+                            ? {
+                                id: savedK._id,
+                                name: savedK.personalInfo?.name || savedK.title,
+                                dob: savedK.personalInfo?.dateOfBirth ? new Date(savedK.personalInfo.dateOfBirth).toISOString().split('T')[0] : "",
+                                tob: savedK.personalInfo?.timeOfBirth || "",
+                                place: savedK.personalInfo?.placeOfBirth || "",
+                                gender: savedK.personalInfo?.gender || "Male",
+                                rashi: moonInfo?.sign || savedK.chartData?.rashi || "Pisces",
+                                nakshatra: savedK.chartData?.nakshatra || "Revati",
+                                lagna: savedK.chartData?.lagna || "Leo",
+                                createdAt: savedK.createdAt,
+                                tags: savedK.tags || [],
+                            }
+                            : d
+                        ));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to update Kundli:", err);
+            }
+        } else {
+            setData((prev) => prev.map((d) => d.id === updated.id
+                ? {
+                    ...d,
+                    ...updated,
+                    tags: typeof updated.tags === "string" ? updated.tags.split(",").map((s) => s.trim()) : updated.tags,
+                }
+                : d));
+        }
+    }
     // TAG LIST
     const allTags = useMemo(() => {
         const t = new Set();
         data.forEach((d) => (d.tags || []).forEach((tag) => t.add(tag)));
         return Array.from(t);
     }, [data]);
-    function onSave(updated) {
-        setData((prev) => prev.map((d) => d.id === updated.id
-            ? {
-                ...d,
-                ...updated,
-                tags: typeof updated.tags === "string" ? updated.tags.split(",").map((s) => s.trim()) : updated.tags,
-            }
-            : d));
-    }
     // FILTER + SORT (fully optimized)
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();

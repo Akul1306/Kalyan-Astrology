@@ -6,6 +6,7 @@ import {
   getKundliById,
   deleteKundli,
   getMatchmakingDetails,
+  updateKundli,
 } from "./kundliController.js";
 import { protect } from "../../middleware/authMiddleware.js";
 
@@ -23,6 +24,7 @@ router.route("/").get(getSavedKundlis);
 router
   .route("/:id")
   .get(getKundliById)
+  .put(updateKundli)
   .delete(deleteKundli);
 
 export default router;

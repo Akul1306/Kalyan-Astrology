@@ -429,3 +429,66 @@ export const getMatchmakingDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Update specific Kundli
+// @route   PUT /api/kundli/:id
+export const updateKundli = async (req, res, next) => {
+  try {
+    const { name, dob, tob, place, gender, rashi, nakshatra, lagna, title, tags } = req.body;
+
+    const kundli = await Kundli.findOne({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+
+    if (!kundli) {
+      return next(new AppError("No Kundli found with that ID or unauthorized", 404));
+    }
+
+    if (title) kundli.title = title;
+    
+    // Update personalInfo fields if provided
+    if (name) kundli.personalInfo.name = name;
+    if (dob) kundli.personalInfo.dateOfBirth = new Date(dob);
+    if (tob) kundli.personalInfo.timeOfBirth = tob;
+    if (place) kundli.personalInfo.placeOfBirth = place;
+    if (gender) kundli.personalInfo.gender = gender;
+
+    // Update tags
+    if (tags !== undefined) {
+      kundli.tags = Array.isArray(tags) ? tags : tags.split(",").map(t => t.trim());
+    }
+
+    // Support updating rashi/nakshatra/lagna within chartData if desired
+    if (rashi || nakshatra || lagna) {
+      if (!kundli.chartData) kundli.chartData = {};
+      if (rashi) {
+        if (!kundli.chartData.planetaryPositions) {
+          kundli.chartData.planetaryPositions = [];
+        }
+        const moonIdx = kundli.chartData.planetaryPositions.findIndex(p => p.planet === "Moon");
+        if (moonIdx > -1) {
+          kundli.chartData.planetaryPositions[moonIdx].sign = rashi;
+        } else {
+          kundli.chartData.planetaryPositions.push({ planet: "Moon", sign: rashi, degree: "0°0'", house: 1 });
+        }
+      }
+      if (nakshatra) kundli.chartData.nakshatra = nakshatra;
+      if (lagna) kundli.chartData.lagna = lagna;
+      
+      kundli.markModified("chartData");
+    }
+
+    await kundli.save();
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        kundli,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
